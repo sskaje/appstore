@@ -1,106 +1,20 @@
 <?php
-
-class iTunes
+require_once(__DIR__ . '/curl.class.php');
+/**
+ * iTunes Appstore Protocol class
+ *
+ * @author sskaje (sskaje [at] gmail [dot] com)
+ */
+class iTunes extends spCurl
 {
-	protected function init_curl ()
-	{
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		
-		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_setopt($ch, CURLOPT_USERAGENT, "iTunes/10.6 (Windows; Microsoft Windows 7 x64 Ultimate Edition Service Pack 1 (Build 7601)) AppleWebKit/534.54.16");
-		//curl_setopt($ch, CURLOPT_USERAGENT, "iTunes/8.6 AppleWebKit/334.52.7");
-		curl_setopt($ch, CURLOPT_COOKIEFILE, '_cookie.txt');
-		curl_setopt($ch, CURLOPT_COOKIEJAR, '_cookie.txt');
-		
-		curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-		curl_setopt($ch, CURLOPT_VERBOSE, 1);
-		curl_setopt($ch, CURLOPT_HEADER, 1);
-		$this->curl = & $ch;
-	}
-	protected $curl;
+	protected $curlopt_useragent = 'iTunes/10.6 (Windows; Microsoft Windows 7 x64 Ultimate Edition Service Pack 1 (Build 7601)) AppleWebKit/534.54.16';
 	
 	public function __construct()
 	{
-		$this->init_curl();
+		parent::__construct();
 	}
 	
-	public function __destruct()
-	{
-		curl_close($this->curl);
-	}
-
-
-	private function _http_log($msg)
-	{
-		return file_put_contents('logs/request.log', $msg."\n", FILE_APPEND);
-	}
-
-	protected function http_post($url, $data, $content_type='application/x-www-form-urlencoded')
-	{
-		$ch = & $this->curl;
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-		$this->_http_log("HTTP POST: {$url}\nPOST FIELDS: {$data}");
-		$retry_count = 0;
-		
-		$this->http_add_header('Content-Type', $content_type);
-POST_EXEC:
-		$v = $this->curl_exec();
-		if (($code = curl_getinfo($ch, CURLINFO_HTTP_CODE)) != '200') {
-			$retry_count++;
-			$this->_http_log('Retry++'.$code);
-			goto POST_EXEC;
-		}
-		return trim($v);
-	}
-	
-	protected function http_get($url)
-	{
-		$ch = & $this->curl;
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_POST, 0);
-		curl_setopt($ch, CURLOPT_HTTPGET, 1);
-		$this->_http_log("HTTP GET: {$url}");
-		$retry_count = 0;
-GET_EXEC:
-		$v = $this->curl_exec();
-		if (($code = curl_getinfo($ch, CURLINFO_HTTP_CODE)) != '200') {
-			$retry_count++;
-			$this->_http_log('Retry++'.$code);
-			goto GET_EXEC;
-		}
-        return trim($v);
-	}
-	
-	protected $headers = array();
-
-	protected function http_add_headers($headers)
-	{
-		foreach ($headers as $k=>$v) {
-			$this->http_add_header($k, $v);
-		}
-	}
-	protected function http_add_header($key, $value)
-	{
-		$this->headers[$key] = $value;
-	}
-	
-	protected function curl_exec()
-	{
-		$headers = array();
-		foreach ($this->headers as $k=>$v) {
-			$headers[] = "{$k}: {$v}";
-		}
-		
-		curl_setopt($this->curl, CURLOPT_HTTPHEADER, $headers);
-		return curl_exec($this->curl);
-	}
-	
-	public $guid = '';
+	public $guid = '00000000.11111111.22222222.44444444.88888888.00000000.11111111';
 	public $apple_id = '';
 	public $password = '';
 	
@@ -117,9 +31,8 @@ GET_EXEC:
 
 		$this->http_add_header('Content-Type', 'application/x-apple-plist');
 		$ret = $this->http_post($login_url, $login_post, 'application/x-www-form-urlencoded');
-		echo $ret;
+		#echo $ret;
 
-		# <key>passwordToken</key><string>AwIAAAECAAGI+AAAAABPW1YUwpINRvzzJQmNsoq+mk4wiFDFK4g=</string>
 		$m = array();
 		if (preg_match('#x-set-apple-store-front: ([\d\-\,]+)#', $ret, $m)) {
 			$this->store_front = $m[1];
@@ -127,15 +40,15 @@ GET_EXEC:
 			$this->store_front = '143441-1';
 		}
 		
-		# <key>passwordToken</key><string>AwIAAAECAAGI+AAAAABPW1YUwpINRvzzJQmNsoq+mk4wiFDFK4g=</string>
+		# <key>passwordToken</key><string>...</string>
 		$m = array();
 		if (!preg_match('#<key>passwordToken</key><string>([a-zA-Z0-9\+\=\/]+)</string>#', $ret, $m)) {
 			die('bad pwd token');
 		}
 		$this->password_token = $m[1];
 	
-		# <key>dsid</key><integer>1237308672</integer>
-		# <key>dsPersonId</key><string>1237308672</string>
+		# <key>dsid</key><integer>...</integer>
+		# <key>dsPersonId</key><string>...</string>
 		$m = array();
 		if (!preg_match('#<key>dsid</key><integer>([0-9]+)</integer>#', $ret, $m)) {
 			die('bad dsid');
@@ -190,7 +103,7 @@ GET_EXEC:
 		$url = 'https://buy.itunes.apple.com/WebObjects/MZBuy.woa/wa/buyProduct?xToken=' . urlencode($this->password_token);
 		
 		curl_setopt($this->curl, CURLOPT_REFERER, 'http://itunes.apple.com/cn/app/id'.$appid.'?mt=8');
-		echo $post;
+#		echo $post;
 		$ret = $this->http_post($url, $post, 'application/x-apple-plist');
 		
 		var_dump($ret);
