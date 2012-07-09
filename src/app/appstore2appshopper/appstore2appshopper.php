@@ -4,7 +4,7 @@ $apple_password = '';
 $appshopper_username = '';
 $appshopper_password = '';
 
-require(__DIR__ . '/../../classes/itunes.class.php');
+require(__DIR__ . '/../../classes/iTunes.class.php');
 require(__DIR__ . '/../../classes/Appshopper.class.php');
 $appshopper = new Appshopper;
 $appshopper->login($appshopper_username, $appshopper_password);

@@ -101,7 +101,11 @@ class Appshopper extends spCurl
 		
 		$url = 'http://appshopper.com/api/userappimport.php';
 		$postfields = 'username=' . urlencode($this->username) . '&password=' . urlencode($this->password) . '&appids=' . urlencode($id_list) . '';
-		var_dump($this->http_post($url, $postfields));
+		$ret = $this->http_post($url, $postfields);
+		# there's an http 100 at the beginning, so just take the last piece of the splitted data
+		$res = explode("\r\n\r\n", $ret);
+		$response = end($res);
+		return $response;
 	}
 }
 

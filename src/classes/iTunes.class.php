@@ -165,22 +165,22 @@ class iTunes extends spCurl
 		}
 	}
 	
-	public function getPurchasedIDList()
+	public function getPurchasedIDList($hidden=false)
 	{
 		list($s,) = explode('-', $this->store_front, 2);
 		$url = 'https://se.itunes.apple.com/WebObjects/MZStoreElements.woa/wa/purchases?s=' . $s;
-		$postfields = 'action=POST&mt=8&vt=lockerData&restoreMode=undefined';
+		$postfields = 'action=POST&mt=8&vt=lockerData&restoreMode=' . ($hidden ? 'true' : 'undefined');
 		$ret = $this->http_post($url, $postfields);
 		# Apps: appid:{3=>Universal, 2=>iPad, 1=>iPhone}
 		list($header, $response) = explode("\r\n\r\n", $ret, 2);
 		return json_decode($response, true);
 	}
 	
-	public function getPurchasedAppInfo(array $app_ids=array())
+	public function getPurchasedAppInfo(array $app_ids=array(), $hidden=false)
 	{
 		if (empty($app_ids)) {
 			# get from getPurchasedIDList();
-			$full_purchased = $this->getPurchasedIDList();
+			$full_purchased = $this->getPurchasedIDList($hidden);
 			if (isset($full_purchased['Apps'])) {
 				$app_ids = array_keys($full_purchased['Apps']);
 			}
@@ -194,7 +194,7 @@ class iTunes extends spCurl
 
 		list($s,) = explode('-', $this->store_front, 2);
 		$url = 'https://se.itunes.apple.com/WebObjects/MZStoreElements.woa/wa/purchases?s=' . $s;
-		$postfields = 'action=POST&contentIds='.implode(',', $app_ids).'&pillId=0&mt=8&sortValue='.$sort.'&vt=contentData&restoreMode=undefined';
+		$postfields = 'action=POST&contentIds='.implode(',', $app_ids).'&pillId=0&mt=8&sortValue='.$sort.'&vt=contentData&restoreMode=' . ($hidden ? 'true' : 'undefined');
 		$ret = $this->http_post($url, $postfields);
 		var_dump($ret);
 	}
