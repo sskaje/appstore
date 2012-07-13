@@ -65,7 +65,7 @@ class Appshopper extends spCurl
 		
 		$ret = $this->http_get($url);
 		list(, $response) = explode("\r\n\r\n", $ret, 2);
-		var_dump($response);
+		
 		$m = array();
 		preg_match('#<key>updateid</key>\s*<string>(\d+)</string>#sU', $response, $m);
 		if (!isset($m[1])) {
