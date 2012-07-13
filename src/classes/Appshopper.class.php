@@ -11,7 +11,7 @@ define('APPSHOPPER_STATUS_NIL', '');
  */
 class Appshopper extends spCurl
 {
-	protected $curlopt_useragent = 'AppShopper/90 CFNetwork/598.1 Darwin/13.0.0';
+	protected $curlopt_useragent = 'AppShopper/90 CFNetwork/598.1 Darwin/13.0.0 (sskaje)';
 	protected $curlopt_cookiefile = '';
 	protected $curlopt_cookiejar = '_cookie.txt';
 	
@@ -65,9 +65,12 @@ class Appshopper extends spCurl
 		
 		$ret = $this->http_get($url);
 		list(, $response) = explode("\r\n\r\n", $ret, 2);
-		
+		var_dump($response);
 		$m = array();
 		preg_match('#<key>updateid</key>\s*<string>(\d+)</string>#sU', $response, $m);
+		if (!isset($m[1])) {
+			return false;
+		}
 		$ownit = strpos($response, '<key>ownit</key><false/>') === false;
 		$wantit = strpos($response, '<key>wantit</key><false/>') === false;
 		
@@ -81,6 +84,9 @@ class Appshopper extends spCurl
 	public function update($app_id, $status)
 	{
 		$detail = $this->detail($app_id);
+		if (!$detail) {
+			return false;
+		}
 		if ($status == APPSHOPPER_STATUS_OWN && $detail['own'] || $status == APPSHOPPER_STATUS_WANT && $detail['want']) {
 			return true;
 		}

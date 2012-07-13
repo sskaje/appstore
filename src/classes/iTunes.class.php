@@ -7,7 +7,7 @@ require_once(__DIR__ . '/curl.class.php');
  */
 class iTunes extends spCurl
 {
-	protected $curlopt_useragent = 'iTunes/10.6 (Windows; Microsoft Windows 7 x64 Ultimate Edition Service Pack 1 (Build 7601)) AppleWebKit/534.54.16';
+	protected $curlopt_useragent = 'iTunes/10.6 (Windows; Microsoft Windows 7 x64 Ultimate Edition Service Pack 1 (Build 7601)) AppleWebKit/534.54.16 (sskaje)';
 	
 	public function __construct()
 	{
