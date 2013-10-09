@@ -124,22 +124,19 @@ class iTunes extends spCurl
         $result = $this->http_post($form_url, $post);
 
         list(, $body) = explode("\r\n\r\n", $result, 2);
-
-        if (!($json = json_decode($body, true))) {
-            if ($json['status'] == -1) {
-                echo "Congrats, your code might be working, all you need to do is: ". $json['userPresentableErrorMessage'];
-                return true;
-            } else if ($json['status'] == 0) {
+        $json = json_decode($body, true);
+        if ($json) {
+            if ($json['status'] == 0) {
                 echo "Your code has successfully been redeemed\n";
                 return true;
             } else {
-                echo "Something went wrong: " . $json['userPresentableErrorMessage'];
+                echo "Something went wrong: {$json['userPresentableErrorMessage']} status={$json['status']}, errorMessageKey={$json['errorMessageKey']}";
                 return false;
             }
+        } else {
+            echo "Bad response";
+            return false;
         }
-
-        echo "Bad response";
-        return false;
 	}
 	
 	public function getPurchasedIDList($hidden=false)
