@@ -111,58 +111,35 @@ class iTunes extends spCurl
 	
 	
 
-	public function redeem($redeem_code, $test_only=false)
+	public function redeem($redeem_code)
 	{
 		$redeem_code = strtoupper($redeem_code);
 		echo "Code: {$redeem_code} ... ";
 	
 		$page_url = "https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/redeemLandingPage";
 		$ret = $this->http_get($page_url);
-	
-		$m = array();
-		if (!preg_match('#<form name=".+" method="post" action="(/WebObjects/MZFinance.woa/wo/[0-9\.]+)">#', $ret, $m)) {
-			die('bad form in redeem landing page');
-		}
-		$form_url = "https://buy.itunes.apple.com{$m[1]}";
-	
-		if (!preg_match('#<input class="submit" id="redeemButton" type="submit" value="Redeem" name="([0-9\.]+)" />#', $ret, $m)) {
-			die('bad redeem form input name');
-		}
-		$form_name = $m[1];
 
-		$post_fields = "code={$redeem_code}&{$form_name}=Redeem";
-		$ret = $this->http_post($form_url, $post_fields);
-		
-		if (false !== (strpos($ret, 'already been redeemed'))) {
-			echo "Already redeemed\n";
-			return false;
-		} else if (false !== (strpos($ret, 'The code you entered is not recognized as a valid code'))) {
-			echo "Invalid code\n";
-			return false;
-		} else {
-			echo "OK!\n";
-			file_put_contents('code.txt', $redeem_code . "\n", FILE_APPEND);
-			file_put_contents('redeemed.txt', $ret);
-			
-			if (!$test_only) {
-				$m = array();
-				preg_match('#<key>url</key><string>(https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/com.apple.jingle.app.finance.DirectAction/redeemGiftCertificate.+)</string>#', $ret, $m);
-				$url = htmlspecialchars_decode($m[1]);
-				$ret = $this->http_get($url);
-				
-				file_put_contents('redeem_output.txt', $ret);
-				
-				if (strpos($ret, 'Your Apple ID has been credited with $') !== false) {
-					$m = array();
-					preg_match('#Your Apple ID has been credited with \$([0-9\.]+).#', $ret, $m);
-					$redeemed = $m[1];
-					preg_match('#Your balance is \$([0-9\.,]+).#', $ret, $m);
-					$balance = $m[1];
-					echo "Redeemed: \${$redeemed}. Balance: \${$balance}\n";
-				}
-			}
-			return true;
-		}
+        $form_url = 'https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/redeemCodeSrv';
+        $post = "code={$redeem_code}&dsPersonId={$this->dsid}&response-content-type=application%2Fjson&cameraRecognizedCode=false&has4GBLimit=false";
+        $result = $this->http_post($form_url, $post);
+
+        list(, $body) = explode("\r\n\r\n", $result, 2);
+
+        if (!($json = json_decode($body, true))) {
+            if ($json['status'] == -1) {
+                echo "Congrats, your code might be working, all you need to do is: ". $json['userPresentableErrorMessage'];
+                return true;
+            } else if ($json['status'] == 0) {
+                echo "Your code has successfully been redeemed\n";
+                return true;
+            } else {
+                echo "Something went wrong: " . $json['userPresentableErrorMessage'];
+                return false;
+            }
+        }
+
+        echo "Bad response";
+        return false;
 	}
 	
 	public function getPurchasedIDList($hidden=false)

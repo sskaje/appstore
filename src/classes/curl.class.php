@@ -21,6 +21,8 @@ class spCurl
 		curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 		curl_setopt($ch, CURLOPT_VERBOSE, 1);
 		curl_setopt($ch, CURLOPT_HEADER, 1);
+        # Set to HTTP/1.1 to enable keep-alive by default.
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 		
 		$this->curl_setopt($ch);
 		
