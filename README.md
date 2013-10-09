@@ -3,7 +3,7 @@ appstore
 
 iTunes Appstore protocol   
 
-Author: sskaje (sskaje [at] gmail [dot] com)  
+Author: sskaje (sskaje [at] gmail [dot] com)   ([https://sskaje.me/](https://sskaje.me/))
 
 /test  
   Command line interface test only  
